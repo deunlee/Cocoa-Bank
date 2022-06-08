@@ -115,11 +115,13 @@ class Client:
             print(f'[CLIENT] 성공적으로 송금되었습니다. (잔액 {self.user.balance}원)')
         except Exception as e:
             print(f'[CLIENT] 송금 실패: {str(e)}')
+            raise e
 
 
 
 
 if __name__ == '__main__':
+    pass
     # 회원 가입 (계좌 개설)
     # name = '김철수'
     # password = '1234'

@@ -20,7 +20,7 @@ class Server:
     def __init__(self):
         self.private_key = ''
         self.public_key  = ''
-        self.users       = {} # TODO: SQL로 구현할 것
+        self.users       = {}
         if not isfile(PRIVATE_KEY_PATH) or not isfile(PUBLIC_KEY_PATH):
             self.gen_cert()
         else:
@@ -80,7 +80,6 @@ class Server:
     # 회원 가입 (계좌 개설)
     def register(self, name: str, public_key: str) -> User:
         account_num = f'1111-{len(self.users)+1:04}'
-        new_user    = User(name, account_num, 0) # 초기 잔액은 0원
         new_user.set_public_key(public_key)
         self.users[account_num] = new_user
         return new_user
@@ -101,11 +100,13 @@ class Server:
 
     # 송금 (User -> User)
     def transfer(self, account_from: str, account_to: str, amount: int):
+        if account_from == account_to:
+            raise Exception('본인에게 이체할 수 없습니다.')
         user_from: User = self.users.get(account_from)
         user_to: User   = self.users.get(account_to)
         if not user_from:
             raise Exception('보내는 사람 계좌를 찾을 수 없습니다.')
-        if not user_from:
+        if not user_to:
             raise Exception('받는 사람 계좌를 찾을 수 없습니다.')
         user_from.withdraw(user_to.name, amount) # 보내는 사람 계좌에서 금액 차감
         user_to.deposit(user_from.name, amount)  # 받는 사람 계좌에 해당 금액 추가
@@ -178,17 +179,11 @@ if __name__ == '__main__':
                 'log'     : user.log
             }, client_public_key))
         except Exception as e:
-            # traceback.print_exc()
+            traceback.print_exc()
             return res_fail(str(e))
 
 
-    # 서버 공개키
-    # @app.route('/server_public', methods=['POST'])
-    # def route_server_public():
-    #     return res_ok(server.public_key)
-
-
-    # 변경내역 확인용
+    # TODO: 변경내역 확인용
     @app.route('/log_count', methods=['POST'])
     def route_log_count():
         try:
@@ -206,4 +201,5 @@ if __name__ == '__main__':
     app.run(host=SERVER_IP, port=SERVER_PORT)
 
 
+# TODO: 사용자 데이터베이스 MariaDB로 구현할 것
 # TODO: 오류 메시지도 전자봉투로 암호화해서 보내기
