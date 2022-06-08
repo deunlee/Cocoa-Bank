@@ -21,12 +21,13 @@ class DigitalEnvelope:
     def set_receiver_private_key(self, key: str): # 수신자 개인키
         self.receiver_private_key = key
 
-    def encrypt(self, plain_data: str) -> str:
+    def encrypt(self, plain_data: dict) -> str:
         if not self.sender_certificate:  raise Exception('송신자 인증서가 필요합니다.')
         if not self.sender_private_key:  raise Exception('송신자 개인키가 필요합니다.')
         if not self.receiver_public_key: raise Exception('수신자 공개키가 필요합니다.')
             
         # 데이터의 해시를 계산 => 무결성
+        plain_data = json.dumps(plain_data, ensure_ascii=False)
         hash = SHA256.new(plain_data.encode('utf8'))
 
         # 해시를 송신자의 개인키로 암호화 (부인방지) => 전자 서명
@@ -35,7 +36,6 @@ class DigitalEnvelope:
 
         # 비밀키(대칭키) 생성
         session_key = get_random_bytes(16)
-        # print('session_key=' + session_key.hex())
 
         # 원본 데이터, 암호화된 해시, 송신자 인증서를 비밀키(대칭키)로 암호화 => 기밀성
         new_data = {
@@ -43,7 +43,7 @@ class DigitalEnvelope:
             'encryptd_hash' : signature.hex(),
             'sender_cert'   : self.sender_certificate
         }
-        new_data   = json.dumps(new_data).encode('utf8')
+        new_data   = json.dumps(new_data, ensure_ascii=False).encode('utf8')
         cipher_aes = AES.new(session_key, AES.MODE_EAX)
         cipher_text, cipher_tag = cipher_aes.encrypt_and_digest(new_data)
         encrypted = cipher_text.hex() + '/' + cipher_tag.hex() + '/' + cipher_aes.nonce.hex()
@@ -91,4 +91,4 @@ class DigitalEnvelope:
         except (ValueError, TypeError):
             raise Exception('해시 값이 다릅니다.')
 
-        return (plain_data, sender_cert)
+        return (json.loads(plain_data), sender_cert)

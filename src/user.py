@@ -1,13 +1,16 @@
 class User:
-    def __init__(self, name: str, account_num: str, balance: int, public_key: str):
+    def __init__(self, name: str, account_num: str, balance: int):
         self.name        = name.strip()
         self.account_num = account_num
         self.balance     = balance
-        self.public_key  = public_key
+        self.public_key  = None
         self.log         = []
 
     def add_log(self, message: str):
         self.log.append(message)
+    
+    def set_public_key(self, public_key: str):
+        self.public_key = public_key
 
     def deposit(self, name_from: str, amount: int) -> bool:
         if amount <= 0 or type(amount) is not int:
