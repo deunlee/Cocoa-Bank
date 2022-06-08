@@ -21,7 +21,7 @@ class DigitalEnvelope:
     def set_receiver_private_key(self, key: str): # 수신자 개인키
         self.receiver_private_key = key
 
-    def encrypt(self, plain_data: str):
+    def encrypt(self, plain_data: str) -> str:
         if not self.sender_certificate:  raise Exception('송신자 인증서가 필요합니다.')
         if not self.sender_private_key:  raise Exception('송신자 개인키가 필요합니다.')
         if not self.receiver_public_key: raise Exception('수신자 공개키가 필요합니다.')
@@ -91,4 +91,4 @@ class DigitalEnvelope:
         except (ValueError, TypeError):
             raise Exception('해시 값이 다릅니다.')
 
-        return plain_data
+        return (plain_data, sender_cert)
