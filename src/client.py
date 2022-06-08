@@ -1,32 +1,10 @@
-# pip install pycryptodome
+import json
+from Crypto.PublicKey import RSA
 
-from DigitalEnvelope import *
-
-
-class Server:
-    PRIVATE_KEY_PATH = 'server_private.pem'
-    PUBLIC_KEY_PATH  = 'server_public.pem'
-
-    def __init__(self):
-        pass
-
-    def gen_cert(self, bits=2048):
-        key = RSA.generate(bits)
-        private_key = key.export_key()
-        with open(self.PRIVATE_KEY_PATH, 'wb') as f:
-            f.write(private_key)
-
-        public_key = key.publickey().export_key()
-        with open(self.PUBLIC_KEY_PATH, 'wb') as f:
-            f.write(public_key)
-
-    def load_cert(self):
-        self.private_key = open(self.PRIVATE_KEY_PATH).read()
-        self.public_key  = open(self.PUBLIC_KEY_PATH).read()
+from digital_envelope import *
 
 
-
-class User:
+class Client:
     PRIVATE_KEY_PATH = 'user_private.pem'
     PUBLIC_KEY_PATH  = 'user_public.pem'
 
@@ -72,11 +50,8 @@ class User:
 
 if __name__ == '__main__':
 
-    server = Server()
-    # server.gen_cert()
-    server.load_cert()
 
-    user = User('철수', '1000-1234')
+    user = Client('철수', '1000-1234')
     # user.gen_cert()
     user.load_cert()
 
