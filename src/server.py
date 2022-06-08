@@ -1,7 +1,10 @@
-import atexit, pickle, traceback
+import logging, atexit
+import pickle, traceback
 from os.path import isfile
 from Crypto.PublicKey import RSA
 from flask import Flask, request
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 from user import User
 from digital_envelope import DigitalEnvelope
@@ -77,7 +80,7 @@ class Server:
     # 회원 가입 (계좌 개설)
     def register(self, name: str, public_key: str) -> User:
         account_num = f'1111-{len(self.users)+1:04}'
-        new_user    = User(name, account_num, 1100) # 초기 금액은 0원
+        new_user    = User(name, account_num, 0) # 초기 잔액은 0원
         new_user.set_public_key(public_key)
         self.users[account_num] = new_user
         return new_user
@@ -134,12 +137,12 @@ if __name__ == '__main__':
             encrypted_data = request.form.get('data')
             data, client_public_key = server.decrypt_digital_envelope(encrypted_data) # 전자봉투 복호화
             user = server.register(data['name'], client_public_key) # 사용자 등록
-            print(f'[SERVER] 회원가입 완료! ({user.name}: {user.account_num})')
+            print(f'[SERVER] 회원가입 // {user.name}: {user.account_num}')
             return res_ok(server.encrypt_digital_envelope({ # 전자봉투로 암호화해서 전송
                 'account_num': user.account_num
             }, client_public_key))
         except Exception as e:
-            traceback.print_exc()
+            # traceback.print_exc()
             return res_fail(str(e))
 
 
@@ -150,14 +153,14 @@ if __name__ == '__main__':
             encrypted_data = request.form.get('data')
             data, client_public_key = server.decrypt_digital_envelope(encrypted_data) # 전자봉투 복호화
             user = server.get_user_info(data['account_num'], client_public_key)
-            print(f'[SERVER] 계좌 조회: ({user.name}: {user.account_num})')
+            print(f'[SERVER] 계좌 조회 // {user.name}: {user.account_num} // 잔액 {user.balance}원')
             return res_ok(server.encrypt_digital_envelope({ # 전자봉투로 암호화해서 전송
                 'name'    : user.name,
                 'balance' : user.balance,
                 'log'     : user.log
             }, client_public_key))
         except Exception as e:
-            traceback.print_exc()
+            # traceback.print_exc()
             return res_fail(str(e))
 
 
@@ -169,11 +172,13 @@ if __name__ == '__main__':
             data, client_public_key = server.decrypt_digital_envelope(encrypted_data) # 전자봉투 복호화
             user = server.get_user_info(data['account_num'], client_public_key)
             server.transfer(user.account_num, data['account_to'], data['amount'])
+            print(f'[SERVER] 이체 // {user.name}: {user.account_num}) ==> ({user.name}: {user.account_num}) // {data["amount"]}원')
             return res_ok(server.encrypt_digital_envelope({ # 전자봉투로 암호화해서 전송
-                'balance' : user.balance
+                'balance' : user.balance,
+                'log'     : user.log
             }, client_public_key))
         except Exception as e:
-            traceback.print_exc()
+            # traceback.print_exc()
             return res_fail(str(e))
 
 
@@ -199,3 +204,6 @@ if __name__ == '__main__':
 
     print(f'[SERVER] 서버를 시작합니다 ({SERVER_IP}:{SERVER_PORT})')
     app.run(host=SERVER_IP, port=SERVER_PORT)
+
+
+# TODO: 오류 메시지도 전자봉투로 암호화해서 보내기

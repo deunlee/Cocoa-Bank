@@ -1,3 +1,5 @@
+from datetime import datetime
+
 class User:
     def __init__(self, name: str, account_num: str, balance: int):
         self.name        = name.strip()
@@ -7,7 +9,8 @@ class User:
         self.log         = []
 
     def add_log(self, message: str):
-        self.log.append(message)
+        time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.log.append(f'{time} @ {message}')
     
     def set_public_key(self, public_key: str):
         self.public_key = public_key
