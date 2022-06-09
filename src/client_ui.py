@@ -1,4 +1,4 @@
-from pydoc import cli
+import os
 import sys
 import glob
 from PyQt5 import uic
@@ -6,13 +6,17 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import QTimer, QTime
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5.QtWidgets import *
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
 from client import Client, PRIVATE_KEY_PATH
 
 class LoginWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ui = uic.loadUi('ui/ui_login.ui', self)
+        self.ui = uic.loadUi(resource_path('ui/ui_login.ui'), self)
     
         cert_list = glob.glob(PRIVATE_KEY_PATH.format('*', '*'))
         def conv(x):
@@ -50,7 +54,7 @@ class LoginWindow(QMainWindow):
 class RegisterWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ui = uic.loadUi('ui/ui_register.ui', self)
+        self.ui = uic.loadUi(resource_path('ui/ui_register.ui'), self)
         self.btn_register.clicked.connect(self.on_click_register)
 
     def on_click_register(self):
@@ -75,7 +79,7 @@ class RegisterWindow(QMainWindow):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ui = uic.loadUi('ui/ui_main.ui', self)
+        self.ui = uic.loadUi(resource_path('ui/ui_main.ui'), self)
         self.btn_transfer.clicked.connect(self.on_click_transfer)
         self.btn_refresh.clicked.connect(self.on_click_refresh)
         self.client = None
@@ -112,7 +116,7 @@ class MainWindow(QMainWindow):
 class TransferWindow(QDialog):
     def __init__(self, client: Client):
         super().__init__()
-        self.ui = uic.loadUi('ui/ui_transfer.ui', self)
+        self.ui = uic.loadUi(resource_path('ui/ui_transfer.ui'), self)
         self.client = client
         self.btn_transfer.clicked.connect(self.on_click_transfer)
 
@@ -139,7 +143,7 @@ class TransferWindow(QDialog):
 class QCustomQWidget(QWidget):
     def __init__ (self, parent=None):
         super(QCustomQWidget, self).__init__(parent)
-        self.ui = uic.loadUi('ui/ui_list_widget.ui', self)
+        self.ui = uic.loadUi(resource_path('ui/ui_list_widget.ui'), self)
 
     def set_log(self, log):
         sign   = '-' if log['type'] == 'withdraw' else '+'
@@ -156,6 +160,7 @@ class QCustomQWidget(QWidget):
 
 
 if __name__ == '__main__':
+    print('[CLIENT] 클라이언트 UI를 시작합니다.')
     app = QApplication(sys.argv)
     LoginWindow().show()
     sys.exit(app.exec_())

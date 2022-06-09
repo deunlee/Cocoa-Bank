@@ -1,4 +1,5 @@
-requests
 pycryptodome
 bcrypt
 PyQt5
+flask 
+requests

@@ -106,7 +106,7 @@ class Client:
             decrypted = self.decrypt_digital_envelope(response) # 전자봉투 복호화
             self.user = User(decrypted['name'], self.account_num, decrypted['balance'])
             self.user.logs = decrypted['logs']
-            print(f'[CLIENT] 로그인되었습니다. ({self.user.name}: {self.account_num})')
+            print(f'[CLIENT] 로그인된 사용자: ({self.user.name}: {self.account_num})')
             print(f'[CLIENT] 현재까지 거래내역은 {len(self.user.logs)}건, 잔액은 {self.user.balance}원 입니다.')
         except Exception as e:
             print(f'[CLIENT] 사용자 정보 불러오기 실패: {str(e)}')

@@ -1,3 +1,4 @@
+import os
 import logging
 import atexit
 import pickle
@@ -127,6 +128,7 @@ if __name__ == '__main__':
     atexit.register(close_handler)
 
     # 플라스크 웹 서버 생성
+    os.environ['FLASK_ENV'] = 'development'
     app = Flask(__name__)
     def res_ok(data):
         return { 'success': True, 'data': data }
@@ -200,4 +202,4 @@ if __name__ == '__main__':
 
 
     print(f'[SERVER] 서버를 시작합니다 ({SERVER_IP}:{SERVER_PORT})')
-    app.run(host=SERVER_IP, port=SERVER_PORT)
+    app.run(host=SERVER_IP, port=SERVER_PORT, use_reloader=False)
