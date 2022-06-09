@@ -6,21 +6,24 @@ class User:
         self.account_num = account_num
         self.balance     = balance
         self.public_key  = None
-        self.log         = []
+        self.logs        = []
 
-    def add_log(self, message: str):
-        time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        self.log.append(f'{time} @ {message}')
+    def get_time_str(self):
+        return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     def set_public_key(self, public_key: str):
         self.public_key = public_key
 
-    def deposit(self, name_from: str, amount: int) -> bool:
+    def deposit(self, name_from: str, amount: int):
         if amount <= 0 or type(amount) is not int:
             raise Exception('금액은 자연수이어야 합니다.')
         self.balance += amount
-        self.add_log(f'입금: {name_from} ({amount}원)')
-        return True
+        self.logs.append({
+            'type'    : 'deposit',
+            'message' : name_from,
+            'amount'  : amount,
+            'time'    : self.get_time_str()
+        })
 
     def withdraw(self, name_to: str, amount: int):
         if amount <= 0 or type(amount) is not int:
@@ -28,8 +31,12 @@ class User:
         if self.balance < amount and not self.is_atm():
             raise Exception('잔액이 부족합니다.')
         self.balance -= amount
-        self.add_log(f'출금: {name_to} ({amount}원)')
-        return True
+        self.logs.append({
+            'type'    : 'withdraw',
+            'message' : name_to,
+            'amount'  : amount,
+            'time'    : self.get_time_str()
+        })
 
     def is_atm(self):
         # 9999로 시작하는 계좌는 ATM 계좌

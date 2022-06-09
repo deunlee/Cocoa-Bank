@@ -1,6 +1,9 @@
-import json, requests
+import json
+import bcrypt
+import requests
 from Crypto.PublicKey import RSA
 
+from aes import AESCryptoCBC
 from user import User
 from digital_envelope import DigitalEnvelope
 
@@ -19,11 +22,16 @@ PRIVATE_KEY_PATH = 'user-{0}-{1}-private.pem'
 PUBLIC_KEY_PATH  = 'user-{0}-{1}-public.pem'
 
 class Client:
-    def __init__(self, account_num: str, private_key: str, public_key: str):
-        self.private_key = private_key
-        self.public_key  = public_key
+    def __init__(self, account_num: str, name: str, password: str):
+        self.private_key = open(PRIVATE_KEY_PATH.format(account_num, name), 'r').read().split('**')
+        self.public_key  = open(PUBLIC_KEY_PATH.format(account_num, name), 'r').read()
         self.account_num = account_num
         self.user: User  = None
+        # 비밀번호 확인 후 개인키 파일 복호화
+        if not bcrypt.checkpw(password.encode('utf8'), self.private_key[0].encode('utf8')):
+            raise Exception('비밀번호가 일치하지 않습니다.')
+        crypto = AESCryptoCBC(password)
+        self.private_key = crypto.decrypt(self.private_key[1])
         self.load_user_info()
 
     @staticmethod
@@ -47,10 +55,15 @@ class Client:
             raise Exception('공개키가 다릅니다. 해킹 시도일 수 있습니다.')
         account_num = data['account_num']
         print(f'[CLIENT] 회원가입 완료! 발급된 계좌번호는 {account_num} 입니다.')
+        # 개인키 파일은 암호화해서 저장 (AES + bcrypt)
+        hash        = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt()).decode('utf8')
+        crypto      = AESCryptoCBC(password)
+        private_key = hash + '**' + crypto.encrypt(private_key)
         with open(PRIVATE_KEY_PATH.format(account_num, name), 'w') as f:
             f.write(private_key)
         with open(PUBLIC_KEY_PATH.format(account_num, name), 'w') as f:
             f.write(public_key)
+        print('[CLIENT] 인증서 및 비밀번호가 저장되었습니다.')
         return account_num
 
     @staticmethod
@@ -92,8 +105,9 @@ class Client:
             response  = Client.send_request('check', encrypted) # 서버에 요청
             decrypted = self.decrypt_digital_envelope(response) # 전자봉투 복호화
             self.user = User(decrypted['name'], self.account_num, decrypted['balance'])
+            self.user.logs = decrypted['logs']
             print(f'[CLIENT] 로그인되었습니다. ({self.user.name}: {self.account_num})')
-            print(f'[CLIENT] 현재까지 거래내역은 {len(self.user.log)}건, 잔액은 {self.user.balance}원 입니다.')
+            print(f'[CLIENT] 현재까지 거래내역은 {len(self.user.logs)}건, 잔액은 {self.user.balance}원 입니다.')
         except Exception as e:
             print(f'[CLIENT] 사용자 정보 불러오기 실패: {str(e)}')
             raise e
@@ -110,8 +124,8 @@ class Client:
             response  = Client.send_request('transfer', encrypted) # 서버에 요청
             decrypted = self.decrypt_digital_envelope(response)    # 전자봉투 복호화
             self.user.balance = decrypted['balance']
-            self.user.log     = decrypted['log']
-            print(self.user.log)
+            self.user.logs    = decrypted['logs']
+            # print(self.user.logs)
             print(f'[CLIENT] 성공적으로 송금되었습니다. (잔액 {self.user.balance}원)')
         except Exception as e:
             print(f'[CLIENT] 송금 실패: {str(e)}')
@@ -121,24 +135,7 @@ class Client:
 
 
 if __name__ == '__main__':
-    pass
-    # 회원 가입 (계좌 개설)
-    # name = '김철수'
-    # password = '1234'
-    # account_num = Client.register(name, password)
-
-    # name = '김영희'
-    # password = '5678'
-    # account_num = Client.register(name, password)
-
-    # TODO: bcrypt로 비밀번호 해시 -> 개인키 암호화
-    # b = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    # c = '1234'
-    # bcrypt.checkpw(c.encode('utf-8'), b)
-
-    # 사용자 객체 생성
-    # user = Client(account_num)
-    # user1 = Client('1111-0001') #철수
-    # user2 = Client('1111-0002') #영희
-
-    # user2.transfer(user1.account_num, 1000)
+    password = 'secret'
+    hash = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt()).decode('utf8')
+    print(hash)
+    print(bcrypt.checkpw(password.encode('utf8'), hash.encode('utf8')))

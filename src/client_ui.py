@@ -1,11 +1,13 @@
-import sys, glob
+from pydoc import cli
+import sys
+import glob
 from PyQt5 import uic
 from PyQt5.QtGui import *
 from PyQt5.QtCore import QTimer, QTime
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5.QtWidgets import *
 
-from client import *
+from client import Client, PRIVATE_KEY_PATH
 
 class LoginWindow(QMainWindow):
     def __init__(self):
@@ -30,10 +32,14 @@ class LoginWindow(QMainWindow):
             QMessageBox.warning(self, self.windowTitle(), '비밀번호를 입력해 주세요.')
             return
         name, account_num = self.combo_account.currentText().split(': ')
-        window = MainWindow()
-        window.set_info(name, account_num)
-        window.show()
-        self.close()
+        try:
+            client = Client(account_num, name, password)
+            window = MainWindow()
+            window.set_client(client)
+            window.show()
+            self.close()
+        except Exception as e:
+            QMessageBox.critical(self, self.windowTitle(), str(e))
 
     def on_click_register(self):
         RegisterWindow().show()
@@ -49,7 +55,7 @@ class RegisterWindow(QMainWindow):
 
     def on_click_register(self):
         name     = self.txt_name.text().strip().replace(':', '')
-        password = self.txt_name.text()
+        password = self.txt_password.text()
         if not name:
             QMessageBox.warning(self, self.windowTitle(), '이름을 입력해 주세요.')
             return
@@ -78,21 +84,22 @@ class MainWindow(QMainWindow):
         # self.timer.timeout.connect(self.on_click_refresh)
         # self.timer.start()    
 
-    def set_info(self, name, account_num):
-        try:
-            private_key = open(PRIVATE_KEY_PATH.format(account_num, name)).read()
-            public_key  = open(PUBLIC_KEY_PATH.format(account_num, name)).read()
-            self.client = Client(account_num, private_key, public_key)
-        except Exception as e:
-            QMessageBox.critical(self, self.windowTitle(), str(e))
-            self.close()
-        self.label_info.setText(f'{name} {account_num}')
+    def set_client(self, client: Client):
+        self.client = client
+        self.label_info.setText(f'{client.user.name} {client.user.account_num}')
         self.on_click_refresh()
 
     def on_click_refresh(self):
         self.client.load_user_info()
         self.label_balance.setText(f'{format(self.client.user.balance, ",")}원')
-        print(self.client.user.log)
+        self.list_widget.clear()
+        for log in reversed(self.client.user.logs):
+            widget = QCustomQWidget()
+            widget.set_log(log)
+            item = QListWidgetItem(self.list_widget)
+            item.setSizeHint(widget.size())
+            self.list_widget.addItem(item)
+            self.list_widget.setItemWidget(item, widget)
 
     def on_click_transfer(self):
         window = TransferWindow(self.client)
@@ -128,6 +135,23 @@ class TransferWindow(QDialog):
         self.btn_transfer.setEnabled(True)
 
 
+
+class QCustomQWidget(QWidget):
+    def __init__ (self, parent=None):
+        super(QCustomQWidget, self).__init__(parent)
+        self.ui = uic.loadUi('ui/ui_list_widget.ui', self)
+
+    def set_log(self, log):
+        sign   = '-' if log['type'] == 'withdraw' else '+'
+        prefix = '출금' if log['type'] == 'withdraw' else '입금'
+        self.label_time.setText(log['time'][5:].replace(' ', '\n'))
+        self.label_message.setText(prefix + ': ' + log['message'])
+        self.label_amount.setText(sign + format(log['amount'], ',') + '원')
+        if log['type'] == 'deposit':
+            self.label_amount.setStyleSheet('color: blue')
+        elif log['type'] == 'withdraw':
+            self.label_amount.setStyleSheet('color: red')
+        # self.icon.setPixmap(QPixmap(img_path))
 
 
 

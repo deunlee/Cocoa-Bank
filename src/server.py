@@ -1,5 +1,7 @@
-import logging, atexit
-import pickle, traceback
+import logging
+import atexit
+import pickle
+import traceback
 from os.path import isfile
 from Crypto.PublicKey import RSA
 from flask import Flask, request
@@ -30,17 +32,17 @@ class Server:
     def gen_cert(self, bits=2048):
         print('[SERVER] 인증서를 생성합니다.')
         key = RSA.generate(bits)
-        self.private_key = key.export_key()
-        self.public_key  = key.publickey().export_key()
-        with open(self.PRIVATE_KEY_PATH, 'wb') as f:
+        self.private_key = key.export_key().decode('utf8')
+        self.public_key  = key.publickey().export_key().decode('utf8')
+        with open(PRIVATE_KEY_PATH, 'w') as f:
             f.write(self.private_key)
-        with open(self.PUBLIC_KEY_PATH, 'wb') as f:
+        with open(PUBLIC_KEY_PATH, 'w') as f:
             f.write(self.public_key)
         print('[SERVER] 인증서 생성 완료!')
 
     def load_cert(self):
-        self.private_key = open(PRIVATE_KEY_PATH).read()
-        self.public_key  = open(PUBLIC_KEY_PATH).read()
+        self.private_key = open(PRIVATE_KEY_PATH, 'r').read()
+        self.public_key  = open(PUBLIC_KEY_PATH, 'r').read()
         print('[SERVER] 인증서 로드 완료!')
 
     def load_database(self):
@@ -80,6 +82,7 @@ class Server:
     # 회원 가입 (계좌 개설)
     def register(self, name: str, public_key: str) -> User:
         account_num = f'1111-{len(self.users)+1:04}'
+        new_user    = User(name, account_num, 100000)
         new_user.set_public_key(public_key)
         self.users[account_num] = new_user
         return new_user
@@ -143,7 +146,7 @@ if __name__ == '__main__':
                 'account_num': user.account_num
             }, client_public_key))
         except Exception as e:
-            # traceback.print_exc()
+            traceback.print_exc()
             return res_fail(str(e))
 
 
@@ -158,7 +161,7 @@ if __name__ == '__main__':
             return res_ok(server.encrypt_digital_envelope({ # 전자봉투로 암호화해서 전송
                 'name'    : user.name,
                 'balance' : user.balance,
-                'log'     : user.log
+                'logs'    : user.logs
             }, client_public_key))
         except Exception as e:
             # traceback.print_exc()
@@ -173,13 +176,14 @@ if __name__ == '__main__':
             data, client_public_key = server.decrypt_digital_envelope(encrypted_data) # 전자봉투 복호화
             user = server.get_user_info(data['account_num'], client_public_key)
             server.transfer(user.account_num, data['account_to'], data['amount'])
-            print(f'[SERVER] 이체 // {user.name}: {user.account_num}) ==> ({user.name}: {user.account_num}) // {data["amount"]}원')
+            user_to = server.users.get(data['account_to'])
+            print(f'[SERVER] 이체 // ({user.name}: {user.account_num}) ==> ({user_to.name}: {user_to.account_num}) // {data["amount"]}원')
             return res_ok(server.encrypt_digital_envelope({ # 전자봉투로 암호화해서 전송
                 'balance' : user.balance,
-                'log'     : user.log
+                'logs'    : user.logs
             }, client_public_key))
         except Exception as e:
-            traceback.print_exc()
+            # traceback.print_exc()
             return res_fail(str(e))
 
 
@@ -191,9 +195,9 @@ if __name__ == '__main__':
             user        = server.users.get(account_num)
             if not user:            
                 return res_fail('가입된 사용자가 아닙니다.')
-            return res_ok(len(user.log))
+            return res_ok(len(user.logs))
         except Exception as e:
-            traceback.print_exc()
+            # traceback.print_exc()
             return res_fail(str(e))
 
 
