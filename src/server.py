@@ -186,8 +186,6 @@ if __name__ == '__main__':
             # traceback.print_exc()
             return res_fail(str(e))
 
-
-    # TODO: 변경내역 확인용
     @app.route('/log_count', methods=['POST'])
     def route_log_count():
         try:
@@ -203,7 +201,3 @@ if __name__ == '__main__':
 
     print(f'[SERVER] 서버를 시작합니다 ({SERVER_IP}:{SERVER_PORT})')
     app.run(host=SERVER_IP, port=SERVER_PORT)
-
-
-# TODO: 사용자 데이터베이스 MariaDB로 구현할 것
-# TODO: 오류 메시지도 전자봉투로 암호화해서 보내기
