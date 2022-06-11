@@ -1,12 +1,17 @@
 # Cocoa-Bank
 
 ## Summary
-파이썬으로 구현한 간편 송금 서비스 애플리케이션 입니다.
+파이썬으로 구현한 간단한 송금 서비스 애플리케이션 입니다.
 대칭키/비대칭키 암호화 및 해시 알고리즘을 이용하여 [전자봉투][DE](digital envelope)를 구현하는 것을 목표로 개발하였습니다.
 전자봉투 구현에는 RSA와 AES, SHA-256 알고리즘을 사용하였으며, 비밀번호 저장에는 bcrypt 알고리즘을 적용하였습니다.
-서버-클라이언트 구조이며 서버는 flask를 사용하고 통신 프로토콜로 DEoH(Digital-Envelope over HTTP)을 개발하였습니다.
+서버-클라이언트 구조이며 서버는 flask 프레임워크를 사용하고 통신 프로토콜로 DEoH(Digital-Envelope over HTTP)을 개발하였습니다.
 
 [DE]: http://wiki.hash.kr/index.php/전자봉투
+
+This is a simple banking service application implemented in Python.
+It was developed with the goal of realizing a digital envelope using a symmetric/asymmetric encryption and hash algorithm.
+The RSA, AES, and SHA-256 algorithms were used to implement it, and the bcrypt algorithm was applied to store the password.
+It is a server-client structure, and the server uses flask framework and DEoH(Digital-Envelope over HTTP) protocol that we made.
 
 ## Digital Envelope
 전자봉투를 이용하여 암호화할 경우 수신자만 복호화가 가능합니다.
