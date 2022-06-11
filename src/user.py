@@ -6,6 +6,7 @@ class User:
         self.account_num = account_num
         self.balance     = balance
         self.public_key  = None
+        self.last_time   = 0 # replay attack 방지용
         self.logs        = []
 
     def get_time_str(self):
@@ -14,7 +15,10 @@ class User:
     def set_public_key(self, public_key: str):
         self.public_key = public_key
 
-    def deposit(self, name_from: str, amount: int):
+    def deposit(self, name_from: str, amount: int, timestamp: int):
+        if self.last_time >= timestamp:
+            raise Exception('재전송 공격 감지됨! 해킹 시도일 수 있습니다')
+        self.last_time = timestamp
         if amount <= 0 or type(amount) is not int:
             raise Exception('금액은 자연수이어야 합니다.')
         self.balance += amount
@@ -25,7 +29,10 @@ class User:
             'time'    : self.get_time_str()
         })
 
-    def withdraw(self, name_to: str, amount: int):
+    def withdraw(self, name_to: str, amount: int, timestamp: int):
+        if self.last_time >= timestamp:
+            raise Exception('재전송 공격 감지됨! 해킹 시도일 수 있습니다')
+        self.last_time = timestamp
         if amount <= 0 or type(amount) is not int:
             raise Exception('금액은 자연수이어야 합니다.')
         if self.balance < amount and not self.is_atm():
@@ -41,3 +48,7 @@ class User:
     def is_atm(self):
         # 9999로 시작하는 계좌는 ATM 계좌
         return self.account_num.startswith('9999-')
+
+    @staticmethod
+    def get_timestamp():
+        return int(datetime.now().timestamp() * 1000)

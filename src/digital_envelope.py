@@ -67,13 +67,13 @@ class DigitalEnvelope:
         aes_nonce       = bytes.fromhex(aes_nonce)
         enc_session_key = bytes.fromhex(enc_session_key)
 
-        # 비밀키(대칭키)를 수신자의 비밀키로 복호화
+        # 비밀키(대칭키)를 수신자의 개인키로 복호화
         rsa_key     = RSA.import_key(self.receiver_private_key)
         cipher_rsa  = PKCS1_OAEP.new(rsa_key)
         session_key = cipher_rsa.decrypt(enc_session_key)
-        # print('session_key=' + session_key.hex())
 
-        # 비밀키로 데이터를 복호화 => 원본 데이터, 암호화된 해시, 송신자의 인증서 획득
+        # 비밀키로 데이터를 복호화 => 기밀성
+        # (원본 데이터, 암호화된 해시, 송신자의 인증서 획득)
         cipher_aes = AES.new(session_key, AES.MODE_EAX, aes_nonce)
         data = cipher_aes.decrypt_and_verify(cipher_text, cipher_tag)
         data = json.loads(data)
@@ -81,14 +81,15 @@ class DigitalEnvelope:
         signature   = bytes.fromhex(data['encryptd_hash'])
         sender_cert = data['sender_cert']
 
-        # 데이터의 해시를 계산
+        # 데이터의 해시를 계산 => 무결성
         hash = SHA256.new(plain_data.encode('utf8'))
 
-        # 암호화된 해시값을 송신자의 공개키로 복호화하고 비교
+        # 암호화된 해시값을 송신자의 공개키로 복호화하고 비교 => 부인방지
         rsa_key = RSA.import_key(sender_cert)
         try:
             PKCS1_v1_5.new(rsa_key).verify(hash, signature)
         except (ValueError, TypeError):
             raise Exception('해시 값이 다릅니다.')
 
+        # 복호화된 데이터 리턴
         return (json.loads(plain_data), sender_cert)

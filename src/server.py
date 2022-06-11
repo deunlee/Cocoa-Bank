@@ -103,7 +103,7 @@ class Server:
         user.withdraw('ATM', amount)
 
     # 송금 (User -> User)
-    def transfer(self, account_from: str, account_to: str, amount: int):
+    def transfer(self, account_from: str, account_to: str, amount: int, timestamp: int):
         if account_from == account_to:
             raise Exception('본인에게 이체할 수 없습니다.')
         user_from: User = self.users.get(account_from)
@@ -112,8 +112,8 @@ class Server:
             raise Exception('보내는 사람 계좌를 찾을 수 없습니다.')
         if not user_to:
             raise Exception('받는 사람 계좌를 찾을 수 없습니다.')
-        user_from.withdraw(user_to.name, amount) # 보내는 사람 계좌에서 금액 차감
-        user_to.deposit(user_from.name, amount)  # 받는 사람 계좌에 해당 금액 추가
+        user_from.withdraw(user_to.name, amount, timestamp) # 보내는 사람 계좌에서 금액 차감
+        user_to.deposit(user_from.name, amount, timestamp)  # 받는 사람 계좌에 해당 금액 추가
 
 
 
@@ -130,6 +130,7 @@ if __name__ == '__main__':
     # 플라스크 웹 서버 생성
     os.environ['FLASK_ENV'] = 'development'
     app = Flask(__name__)
+    app.config['JSON_AS_ASCII'] = False
     def res_ok(data):
         return { 'success': True, 'data': data }
     def res_fail(message):
@@ -148,7 +149,8 @@ if __name__ == '__main__':
                 'account_num': user.account_num
             }, client_public_key))
         except Exception as e:
-            traceback.print_exc()
+            print(f'[SERVER] 회원가입 오류: {str(e)}')
+            # traceback.print_exc()
             return res_fail(str(e))
 
 
@@ -166,6 +168,7 @@ if __name__ == '__main__':
                 'logs'    : user.logs
             }, client_public_key))
         except Exception as e:
+            print(f'[SERVER] 계좌 조회 오류: {str(e)}')
             # traceback.print_exc()
             return res_fail(str(e))
 
@@ -177,7 +180,7 @@ if __name__ == '__main__':
             encrypted_data = request.form.get('data')
             data, client_public_key = server.decrypt_digital_envelope(encrypted_data) # 전자봉투 복호화
             user = server.get_user_info(data['account_num'], client_public_key)
-            server.transfer(user.account_num, data['account_to'], data['amount'])
+            server.transfer(user.account_num, data['account_to'], int(data['amount']), int(data['timestamp']))
             user_to = server.users.get(data['account_to'])
             print(f'[SERVER] 이체 // ({user.name}: {user.account_num}) ==> ({user_to.name}: {user_to.account_num}) // {data["amount"]}원')
             return res_ok(server.encrypt_digital_envelope({ # 전자봉투로 암호화해서 전송
@@ -185,6 +188,7 @@ if __name__ == '__main__':
                 'logs'    : user.logs
             }, client_public_key))
         except Exception as e:
+            print(f'[SERVER] 이체 오류: {str(e)}')
             # traceback.print_exc()
             return res_fail(str(e))
 

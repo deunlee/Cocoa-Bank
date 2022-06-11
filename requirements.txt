@@ -1,5 +1,5 @@
 pycryptodome
 bcrypt
 PyQt5
-flask 
+flask
 requests

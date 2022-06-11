@@ -16,7 +16,6 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 -----END PUBLIC KEY-----""" # 여기 수정해야 함
-# TODO: CA를 구현하면 서버 공개키를 하드코딩하지 않아도 됨
 
 PRIVATE_KEY_PATH = 'user-{0}-{1}-private.pem'
 PUBLIC_KEY_PATH  = 'user-{0}-{1}-public.pem'
@@ -86,6 +85,7 @@ class Client:
         envelope.set_sender_certificate(self.public_key)
         envelope.set_sender_private_key(self.private_key)
         envelope.set_receiver_public_key(SERVER_PUBLIC_KEY)
+        plain_data['timestamp'] = User.get_timestamp()
         return envelope.encrypt(plain_data)
 
     # 전자봉투 복호화
@@ -125,7 +125,6 @@ class Client:
             decrypted = self.decrypt_digital_envelope(response)    # 전자봉투 복호화
             self.user.balance = decrypted['balance']
             self.user.logs    = decrypted['logs']
-            # print(self.user.logs)
             print(f'[CLIENT] 성공적으로 송금되었습니다. (잔액 {self.user.balance}원)')
         except Exception as e:
             print(f'[CLIENT] 송금 실패: {str(e)}')
