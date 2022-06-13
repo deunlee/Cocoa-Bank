@@ -86,6 +86,7 @@ class Server:
         new_user    = User(name, account_num, 100000)
         new_user.set_public_key(public_key)
         self.users[account_num] = new_user
+        self.save_database()
         return new_user
     
     # 입금 (ATM -> User)
@@ -94,6 +95,7 @@ class Server:
         if not user:
             raise Exception('계좌를 찾을 수 없습니다.')
         user.deposit('ATM', amount)
+        self.save_database()
 
     # 출금 (User -> ATM)
     def withdraw(self, account_num: str, amount: int):
@@ -101,6 +103,7 @@ class Server:
         if not user:
             raise Exception('계좌를 찾을 수 없습니다.')
         user.withdraw('ATM', amount)
+        self.save_database()
 
     # 송금 (User -> User)
     def transfer(self, account_from: str, account_to: str, amount: int, timestamp: int):
@@ -114,7 +117,7 @@ class Server:
             raise Exception('받는 사람 계좌를 찾을 수 없습니다.')
         user_from.withdraw(user_to.name, amount, timestamp) # 보내는 사람 계좌에서 금액 차감
         user_to.deposit(user_from.name, amount, timestamp)  # 받는 사람 계좌에 해당 금액 추가
-
+        self.save_database()
 
 
 if __name__ == '__main__':
@@ -123,7 +126,7 @@ if __name__ == '__main__':
 
     # 종료시 데이터베이스 저장
     def close_handler():
-        print('[SERVER] 데이터베이스를 저장하는 중...')
+        print('[SERVER] 데이터베이스를 저장합니다.')
         server.save_database()
     atexit.register(close_handler)
 

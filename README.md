@@ -45,7 +45,6 @@ It is a server-client structure, and the server uses flask framework and DEoH(Di
    - `pip install -r requirements.txt`
 1. 서버 실행 (포트: 5000)
    - `python src/server.py`
-   - **중요:** 서버 종료시 Ctrl+C 키를 사용할 것 (콘솔 창의 X버튼 누르면 데이터가 저장되지 않음)
 1. 클라이언트에 서버 공개키 등록
    - `src/client.py` 코드 열기
    - `server-public.pem` 파일 내용으로 `SERVER_PUBLIC_KEY` 변수 수정
@@ -54,7 +53,7 @@ It is a server-client structure, and the server uses flask framework and DEoH(Di
 
 ## Error Messages
 - RSA key format is not supported
-  - 클라이언트에 서버 공개키 등록 안됨
+  - 클라이언트에 서버 공개키가 등록되지 않음
 - Incorrect decryption.
   - 패킷이 변조되었거나, 서버 공개키가 변경됨
 
